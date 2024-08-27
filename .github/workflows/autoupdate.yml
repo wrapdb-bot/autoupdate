@@ -61,6 +61,12 @@ jobs:
               grep -Fvxf expected-branches | \
               sed "s/^/:/" | \
               xargs -r git push "${{ github.server_url }}/${{ env.HEAD_REPO }}"
+      # Prevent GitHub from disabling the workflow after 60 days
+      # Requires ACCOUNT_TOKEN to have repo scope
+      - name: Keep workflow alive
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCOUNT_TOKEN }}
+        run: gh workflow enable -R ${{ github.repository }} autoupdate.yml
 
   update:
     name: Update
