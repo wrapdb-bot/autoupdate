@@ -40,7 +40,7 @@ jobs:
         run: |
           tools/versions.py list --github --official --update ${{ inputs.wraps }} | \
               sed 's/^matrix=//' | \
-              jq -c '{"include": .include | map(select(.wrap | in({"blueprint-compiler":1, "catch2":1, "pango":1, "qarchive":1}) | not))[0:6]}' | \
+              jq -c '{"include": .include | map(select(.wrap | in({"blueprint-compiler":1, "catch2":1, "pango":1, "qarchive":1, "tracy":1}) | not))[0:6]}' | \
               sed 's/^/matrix=/' >> $GITHUB_OUTPUT
       - name: Report untracked wraps
         run: |
