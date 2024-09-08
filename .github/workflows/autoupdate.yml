@@ -83,7 +83,7 @@ jobs:
     name: Update
     needs: check
     runs-on: ubuntu-latest
-    if: fromJson(needs.check.outputs.matrix).include
+    if: fromJson(needs.check.outputs.matrix).include[0]
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.check.outputs.matrix) }}
