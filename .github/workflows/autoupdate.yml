@@ -12,7 +12,7 @@ on:
         type: string
 
 permissions:
-  # everything uses ACCOUNT_TOKEN
+  # everything uses personal access tokens
   contents: none
 
 concurrency: autoupdate
@@ -22,6 +22,18 @@ env:
   BASE_REPO: mesonbuild/wrapdb
   # repo to send PRs from
   HEAD_REPO: wrapdb-bot/wrapdb
+
+# Tokens:
+# BASE_TOKEN
+#    Classic token with public_repo scope, for accessing BASE_REPO.
+# HEAD_TOKEN
+#    Fine-grained token with R/W code + workflow access to HEAD_REPO.
+#    Workflow access is needed for syncing upstream commits that update
+#    GitHub Actions workflows.  This is safe because GitHub Actions is
+#    disabled in HEAD_REPO.
+# KEEPALIVE_TOKEN
+#    R/W actions access to this repo, for refreshing the 60-day workflow
+#    timeout.
 
 jobs:
   check:
@@ -33,7 +45,7 @@ jobs:
       - name: Check out base repo
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.ACCOUNT_TOKEN }}
+          token: ${{ secrets.BASE_TOKEN }}
           repository: ${{ env.BASE_REPO }}
       - name: Check for updates
         id: check
@@ -50,7 +62,7 @@ jobs:
           tools/versions.py list --markdown --untracked >> $GITHUB_STEP_SUMMARY
       - name: Delete stale branches
         env:
-          GITHUB_TOKEN: ${{ secrets.ACCOUNT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.HEAD_TOKEN }}
         run: |
           tools/versions.py list --json --official --update | \
               jq -r "keys | .[]" | \
@@ -62,10 +74,9 @@ jobs:
               sed "s/^/:/" | \
               xargs -r git push "${{ github.server_url }}/${{ env.HEAD_REPO }}"
       # Prevent GitHub from disabling the workflow after 60 days
-      # Requires ACCOUNT_TOKEN to have repo scope
       - name: Keep workflow alive
         env:
-          GITHUB_TOKEN: ${{ secrets.ACCOUNT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.KEEPALIVE_TOKEN }}
         run: gh workflow enable -R ${{ github.repository }} autoupdate.yml
 
   update:
@@ -79,14 +90,15 @@ jobs:
       - name: Check out base repo
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.ACCOUNT_TOKEN }}
+          token: ${{ secrets.BASE_TOKEN }}
           repository: ${{ env.BASE_REPO }}
       - name: Update
         run: tools/versions.py autoupdate "${{ matrix.wrap }}"
       - name: Create pull request
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.ACCOUNT_TOKEN }}
+          token: ${{ secrets.BASE_TOKEN }}
+          branch-token: ${{ secrets.HEAD_TOKEN }}
           push-to-fork: ${{ env.HEAD_REPO }}
           branch: auto/${{ matrix.wrap }}
           title: "${{ matrix.wrap }}: update from ${{ matrix.old-version }} to ${{ matrix.new-version }}"
