@@ -52,7 +52,7 @@ jobs:
         run: |
           tools/versions.py list --github --official --update ${{ inputs.wraps }} | \
               sed 's/^matrix=//' | \
-              jq -c '{"include": .include | map(select(.wrap | in({"pango":1, "qarchive":1, "tracy":1}) | not))}' | \
+              jq -c '{"include": .include | map(select(.wrap | in({"qarchive":1, "tracy":1}) | not))}' | \
               sed 's/^/matrix=/' >> $GITHUB_OUTPUT
       - name: Report untracked wraps
         run: |
