@@ -1,0 +1,62 @@
+name: Delete stale branches
+
+on:
+  schedule:
+    - cron: "10 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  # everything uses personal access tokens
+  contents: none
+
+# don't race with ourselves or autoupdate.yml
+concurrency: autoupdate
+
+env:
+  # repo to send PRs to
+  BASE_REPO: mesonbuild/wrapdb
+  # repo to send PRs from
+  HEAD_REPO: wrapdb-bot/wrapdb
+
+# Tokens:
+# BASE_TOKEN
+#    Classic token with public_repo scope, for accessing BASE_REPO.
+# HEAD_TOKEN
+#    Fine-grained token with R/W code + workflow access to HEAD_REPO.
+#    Workflow access is needed for syncing upstream commits that update
+#    GitHub Actions workflows.  This is safe because GitHub Actions is
+#    disabled in HEAD_REPO.
+# KEEPALIVE_TOKEN
+#    R/W actions access to this repo, for refreshing the 60-day workflow
+#    timeout.
+
+jobs:
+  prune:
+    name: Delete stale branches
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.check.outputs.matrix }}
+    steps:
+      - name: Check out base repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.BASE_TOKEN }}
+          repository: ${{ env.BASE_REPO }}
+      - name: Delete stale branches
+        env:
+          GITHUB_TOKEN: ${{ secrets.HEAD_TOKEN }}
+        run: |
+          tools/versions.py list --json --official --update | \
+              jq -r "keys | .[]" | \
+              sed "s:^:auto/:" > expected-branches
+          # delete unneeded auto branches, which closes any corresponding PRs
+          gh api "/repos/${{ env.HEAD_REPO }}/branches" -q .[].name | \
+              grep "^auto/" | \
+              grep -Fvxf expected-branches | \
+              sed "s/^/:/" | \
+              xargs -r git push "${{ github.server_url }}/${{ env.HEAD_REPO }}"
+      # Prevent GitHub from disabling the workflow after 60 days
+      - name: Keep workflow alive
+        env:
+          GITHUB_TOKEN: ${{ secrets.KEEPALIVE_TOKEN }}
+        run: gh workflow enable -R ${{ github.repository }} prune.yml

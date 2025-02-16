@@ -15,6 +15,7 @@ permissions:
   # everything uses personal access tokens
   contents: none
 
+# don't race with ourselves or prune.yml
 concurrency: autoupdate
 
 env:
@@ -60,19 +61,6 @@ jobs:
           tools/versions.py list --markdown --port --update >> $GITHUB_STEP_SUMMARY
           echo "## Not configured in [Anitya](https://release-monitoring.org/)" >> $GITHUB_STEP_SUMMARY
           tools/versions.py list --markdown --untracked >> $GITHUB_STEP_SUMMARY
-      - name: Delete stale branches
-        env:
-          GITHUB_TOKEN: ${{ secrets.HEAD_TOKEN }}
-        run: |
-          tools/versions.py list --json --official --update | \
-              jq -r "keys | .[]" | \
-              sed "s:^:auto/:" > expected-branches
-          # delete unneeded auto branches, which closes any corresponding PRs
-          gh api "/repos/${{ env.HEAD_REPO }}/branches" -q .[].name | \
-              grep "^auto/" | \
-              grep -Fvxf expected-branches | \
-              sed "s/^/:/" | \
-              xargs -r git push "${{ github.server_url }}/${{ env.HEAD_REPO }}"
       # Prevent GitHub from disabling the workflow after 60 days
       - name: Keep workflow alive
         env:
