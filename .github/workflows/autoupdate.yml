@@ -83,8 +83,32 @@ jobs:
           repository: ${{ env.BASE_REPO }}
       - name: Update
         run: tools/versions.py autoupdate "${{ matrix.wrap }}"
+      - name: Check for closed pull request
+        id: check-closed
+        env:
+          GITHUB_TOKEN: ${{ secrets.BASE_TOKEN }}
+        run: |
+          # log the details of any PR we find
+          # "-s closed" includes both merged and closed PRs, so we filter on
+          # state in the JSON also
+          if gh pr list -H "auto/${{ matrix.wrap }}" -s closed \
+                  --json headRepositoryOwner,state,title,url | \
+                  jq -e ".[] | select(
+                      .headRepositoryOwner.login == \"${HEAD_REPO%/*}\" and
+                      .state == \"CLOSED\" and
+                      (.title | endswith(\"to ${{ matrix.new-version }}\"))
+                  )"; then
+              # create-pull-request handles updating the branch, so we end
+              # up skipping that too.  We don't want to delete the branch
+              # because that would prevent manual reopening of the PR, but
+              # we leave it stale unless and until the PR is reopened.
+              echo "Found closed PR for this version; skipping branch update and PR"
+          else
+              echo "send-pull=true" >> $GITHUB_OUTPUT
+          fi
       - name: Create pull request
         uses: peter-evans/create-pull-request@v7
+        if: steps.check-closed.outputs.send-pull
         with:
           token: ${{ secrets.BASE_TOKEN }}
           branch-token: ${{ secrets.HEAD_TOKEN }}
