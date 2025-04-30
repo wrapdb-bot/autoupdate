@@ -85,13 +85,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.BASE_TOKEN }}
         run: |
           # log the details of any PR we find
-          # "-s closed" includes both merged and closed PRs, so we filter on
-          # state in the JSON also
-          if gh pr list -H "auto/${{ matrix.wrap }}" -s closed \
-                  --json headRepositoryOwner,state,title,url | \
+          # head: is a prefix match, so we check again with jq
+          if gh pr list \
+                  --search "state:closed is:unmerged author:${HEAD_REPO%/*} head:auto/${{ matrix.wrap }}" \
+                  --json headRefName,title,url | \
                   jq -e ".[] | select(
-                      .headRepositoryOwner.login == \"${HEAD_REPO%/*}\" and
-                      .state == \"CLOSED\" and
+                      .headRefName == \"auto/${{ matrix.wrap }}\" and
                       (.title | endswith(\"to ${{ matrix.new-version }}\"))
                   )"; then
               # create-pull-request handles updating the branch, so we end
