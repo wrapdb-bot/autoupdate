@@ -50,11 +50,7 @@ jobs:
           repository: ${{ env.BASE_REPO }}
       - name: Check for updates
         id: check
-        run: |
-          tools/versions.py list --github --official --update ${{ inputs.wraps }} | \
-              sed 's/^matrix=//' | \
-              jq -c '{"include": .include | map(select(.wrap | in({"qarchive":1, "tracy":1}) | not))}' | \
-              sed 's/^/matrix=/' >> $GITHUB_OUTPUT
+        run: tools/versions.py list --github --official --update ${{ inputs.wraps }} >> $GITHUB_OUTPUT
       - name: Report untracked wraps
         run: |
           echo "## Manual update required" >> $GITHUB_STEP_SUMMARY
