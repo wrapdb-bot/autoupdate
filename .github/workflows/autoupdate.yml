@@ -78,7 +78,14 @@ jobs:
           token: ${{ secrets.BASE_TOKEN }}
           repository: ${{ env.BASE_REPO }}
       - name: Update
-        run: tools/versions.py autoupdate "${{ matrix.wrap }}"
+        id: update
+        run: |
+          tools/versions.py autoupdate "${{ matrix.wrap }}"
+
+          git config set user.name "WrapDB Bot"
+          git config set user.email "179637176+wrapdb-bot@users.noreply.github.com"
+          tools/versions.py commit
+          echo "commit-subject=$(git log -1 --format=%s)" >> $GITHUB_OUTPUT
       - name: Check for closed pull request
         id: check-closed
         env:
@@ -109,9 +116,6 @@ jobs:
           branch-token: ${{ secrets.HEAD_TOKEN }}
           push-to-fork: ${{ env.HEAD_REPO }}
           branch: auto/${{ matrix.wrap }}
-          title: "${{ matrix.wrap }}: update from ${{ matrix.old-version }} to ${{ matrix.new-version }}"
+          title: ${{ steps.update.outputs.commit-subject }}
           body: "[Automated PR](${{ github.server_url }}/${{ github.repository }}/actions/workflows/autoupdate.yml) by WrapDB Bot."
-          commit-message: "${{ matrix.wrap }}: update from ${{ matrix.old-version }} to ${{ matrix.new-version }}"
-          author: "WrapDB Bot <179637176+wrapdb-bot@users.noreply.github.com>"
-          committer: "WrapDB Bot <179637176+wrapdb-bot@users.noreply.github.com>"
           maintainer-can-modify: false
