@@ -86,6 +86,22 @@ jobs:
           git config set user.email "179637176+wrapdb-bot@users.noreply.github.com"
           tools/versions.py commit
           echo "commit-subject=$(git log -1 --format=%s)" >> $GITHUB_OUTPUT
+
+          cat > ${{ runner.temp }}/pull-description <<EOF
+          [Automated PR](${{ github.server_url }}/${{ github.repository }}/actions/workflows/autoupdate.yml)
+          by WrapDB Bot.
+
+          EOF
+          if jq -e ".${{ matrix.wrap }}" < ci_config.json > ${{ runner.temp }}/ci-config; then
+            cat >> ${{ runner.temp }}/pull-description <<EOF
+          \`ci_config.json\`:
+          \`\`\`json
+          $(cat ${{ runner.temp }}/ci-config)
+          \`\`\`
+          EOF
+          else
+            echo 'No configuration in `ci_config.json`.' >> ${{ runner.temp }}/pull-description
+          fi
       - name: Check for closed pull request
         id: check-closed
         env:
@@ -117,5 +133,5 @@ jobs:
           push-to-fork: ${{ env.HEAD_REPO }}
           branch: auto/${{ matrix.wrap }}
           title: ${{ steps.update.outputs.commit-subject }}
-          body: "[Automated PR](${{ github.server_url }}/${{ github.repository }}/actions/workflows/autoupdate.yml) by WrapDB Bot."
+          body-path: ${{ runner.temp }}/pull-description
           maintainer-can-modify: false
