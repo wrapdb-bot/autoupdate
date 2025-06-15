@@ -91,7 +91,7 @@ jobs:
           [Automated PR](${{ github.server_url }}/${{ github.repository }}/actions/workflows/autoupdate.yml) by WrapDB Bot.
 
           EOF
-          if jq -e ".${{ matrix.wrap }}" < ci_config.json > ${{ runner.temp }}/ci-config; then
+          if jq -e ".[\"${{ matrix.wrap }}\"]" < ci_config.json > ${{ runner.temp }}/ci-config; then
             cat >> ${{ runner.temp }}/pull-description <<EOF
           \`ci_config.json\`:
           \`\`\`json
