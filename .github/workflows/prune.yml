@@ -46,13 +46,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.HEAD_TOKEN }}
         run: |
+          set -o pipefail
           tools/versions.py list --json --official --update | \
               jq -r "keys | .[]" | \
               sed "s:^:auto/:" > expected-branches
           # delete unneeded auto branches, which closes any corresponding PRs
           gh api "/repos/${{ env.HEAD_REPO }}/branches" -q .[].name | \
-              grep "^auto/" | \
-              grep -Fvxf expected-branches | \
+              (grep "^auto/" ||:) | \
+              (grep -Fvxf expected-branches ||:) | \
               sed "s/^/:/" | \
               xargs -r git push "${{ github.server_url }}/${{ env.HEAD_REPO }}"
       # Prevent GitHub from disabling the workflow after 60 days
