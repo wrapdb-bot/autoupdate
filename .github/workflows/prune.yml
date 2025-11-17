@@ -38,7 +38,7 @@ jobs:
       matrix: ${{ steps.check.outputs.matrix }}
     steps:
       - name: Check out base repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.BASE_TOKEN }}
           repository: ${{ env.BASE_REPO }}
