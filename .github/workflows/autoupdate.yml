@@ -48,6 +48,8 @@ jobs:
         with:
           token: ${{ secrets.BASE_TOKEN }}
           repository: ${{ env.BASE_REPO }}
+      - name: Install dependencies
+        run: pip install requests
       - name: Check for updates
         id: check
         run: tools/versions.py list --github --official --update ${{ inputs.wraps }} >> $GITHUB_OUTPUT
@@ -77,6 +79,8 @@ jobs:
         with:
           token: ${{ secrets.BASE_TOKEN }}
           repository: ${{ env.BASE_REPO }}
+      - name: Install dependencies
+        run: pip install requests
       - name: Update
         id: update
         run: |
