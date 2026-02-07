@@ -39,7 +39,7 @@ env:
 jobs:
   check:
     name: Check for updates
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     outputs:
       matrix: ${{ steps.check.outputs.matrix }}
     steps:
@@ -66,7 +66,7 @@ jobs:
   update:
     name: Update
     needs: check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     if: fromJson(needs.check.outputs.matrix).include[0]
     strategy:
       fail-fast: false

@@ -33,7 +33,7 @@ env:
 jobs:
   prune:
     name: Delete stale branches
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     outputs:
       matrix: ${{ steps.check.outputs.matrix }}
     steps:
