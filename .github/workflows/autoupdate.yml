@@ -86,8 +86,8 @@ jobs:
         run: |
           tools/versions.py autoupdate "${{ matrix.wrap }}"
 
-          git config set user.name "WrapDB Bot"
-          git config set user.email "179637176+wrapdb-bot@users.noreply.github.com"
+          git config user.name "WrapDB Bot"
+          git config user.email "179637176+wrapdb-bot@users.noreply.github.com"
           tools/versions.py commit
           echo "commit-subject=$(git log -1 --format=%s)" >> $GITHUB_OUTPUT
 
